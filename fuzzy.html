@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Smart Grid Anomaly Detection Dashboard</title>
+
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #e8f0fe;
+            margin: 0;
+            padding: 40px;
+        }
+
+        h2 {
+            color: #0b3d91;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 30px;
+        }
+
+        label {
+            font-size: 15px;
+            font-weight: bold;
+            display: block;
+            margin-top: 20px;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        input[type="number"], select {
+            width: 300px;
+            padding: 12px;
+            border: 1px solid #b0bec5;
+            border-radius: 8px;
+            box-sizing: border-box;
+            margin-bottom: 20px;
+            font-size: 15px;
+            background: #ffffff;
+        }
+
+        button {
+            background-color: #0b3d91;
+            color: white;
+            padding: 14px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        button:hover {
+            background-color: #0941aa;
+        }
+
+        h3 {
+            color: #0b3d91;
+            margin-top: 40px;
+            font-size: 24px;
+            text-align: center;
+        }
+
+        #result, #confirmation {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #ffffff;
+            border-left: 6px solid #0b3d91;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            font-size: 16px;
+        }
+
+        #result p, #confirmation p {
+            margin: 8px 0;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: #f7f9fc;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.05);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h2>Smart Grid Anomaly Detection</h2>
+
+        <label for="voltage">Voltage Deviation (0-20V):</label>
+        <input type="number" id="voltage" min="0" max="20">
+
+        <label for="frequency">Frequency Variation (0-2Hz):</label>
+        <input type="number" id="frequency" min="0" max="2" step="0.01">
+
+        <label for="load">Load Imbalance (0-100%):</label>
+        <input type="number" id="load" min="0" max="100">
+
+        <button onclick="detectAnomaly()">Detect Anomaly</button>
+
+        <div id="result"></div>
+
+        <h3>Fault Correction Action</h3>
+
+        <label for="actionSelect">Choose Correction Action:</label>
+        <select id="actionSelect">
+            <option value="Immediate Isolation and Load Rerouting">Immediate Isolation and Load Rerouting</option>
+            <option value="Activate Load Balancing and Monitoring">Activate Load Balancing and Monitoring</option>
+            <option value="Continuous Monitoring">Continuous Monitoring</option>
+            <option value="No Action Required">No Action Required</option>
+        </select>
+
+        <br><br>
+        <button onclick="confirmAction()">Confirm Action</button>
+
+        <div id="confirmation"></div>
+
+    </div>
+
+    <script>
+        function detectAnomaly() {
+            let voltage = parseFloat(document.getElementById("voltage").value);
+            let frequency = parseFloat(document.getElementById("frequency").value);
+            let load = parseFloat(document.getElementById("load").value);
+
+            // Check if any field is NaN
+            if (isNaN(voltage) || isNaN(frequency) || isNaN(load)) {
+                alert("Please fill all input fields before detecting!");
+                return;
+            }
+
+            fetch('/detect', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ voltage, frequency, load })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Server Error');
+                }
+                return response.json();
+            })
+            .then(data => {
+                document.getElementById("result").innerHTML = `
+                    <p><b>Severity Level:</b> ${data.severity_level}</p>
+                    <p><b>Severity Score:</b> ${data.severity_score.toFixed(2)} / 100</p>
+                    <p><b>Suggested Action:</b> ${data.suggested_action}</p>
+                `;
+                document.getElementById("actionSelect").value = data.suggested_action;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert("Something went wrong! Please check the server or inputs.");
+            });
+        }
+
+        function confirmAction() {
+            let selected = document.getElementById("actionSelect").value;
+            document.getElementById("confirmation").innerHTML = `<b>Confirmed Action:</b> ${selected}`;
+        }
+    </script>
+
+</body>
+</html>
